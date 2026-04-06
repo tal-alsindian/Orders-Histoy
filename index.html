@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* نفس أسلوب تل السنديان */
         :root {
             --forest-green: #2D5A27;
             --olive-green: #4A7B3D;
@@ -183,27 +182,49 @@
             border-radius: 10px;
             font-family: inherit;
         }
-        .add-item-row {
+        .add-item-panel {
+            background: var(--sandy-beige);
+            border-radius: 24px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .add-item-title {
+            font-weight: 900;
+            margin-bottom: 12px;
+            color: var(--forest-green);
+        }
+        .product-select-row {
             display: flex;
             gap: 10px;
-            margin: 15px 0;
             flex-wrap: wrap;
+            align-items: center;
         }
-        .add-item-row input {
-            flex: 1;
-            padding: 8px;
+        .product-search-select {
+            flex: 3;
+            padding: 10px;
+            border-radius: 40px;
             border: 2px solid var(--clay-brown);
-            border-radius: 30px;
             font-family: inherit;
+            background: white;
         }
-        .btn-add-item {
+        .product-price-preview {
+            background: var(--forest-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+        .btn-add-selected {
             background: var(--forest-green);
             color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
+            padding: 10px 20px;
+            border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .btn-remove-item {
             background: #c33;
@@ -313,32 +334,87 @@
 
 <script>
     // ======================== الإعدادات ========================
-    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbxJl3whSGQYuInbpu8CP9iLyCRyYEMN17IMuJut7uEuhsy37EZw5ngJKbKpgBYnsKm48g/exec'; // استبدل بالرابط الجديد
+    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbzrpyoGf6MCmWQ6Pbi_NAj59_LBwUzqxcrdbyUQrAfJoCzNpByzhSZHOilK34Tno20i9A/exec'; // استبدل بالرابط الصحيح
+    const MENU_API_URL = 'https://script.google.com/macros/s/AKfycbyf1LnxXlGpllpyNeO9Gez1ah-DUSaVfTk3KhPDV8lDtN_Zga1GMZDaM387o0XWhIIW/exec'; // رابط جلب المنتجات
 
     let allOrders = [];
+    let menuProducts = []; // مصفوفة المنتجات { id, name, price, categoryId, ... }
 
-    // دوال مساعدة
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function safeParseItems(items) {
+        if (!items) return [];
+        if (Array.isArray(items)) return items;
+        if (typeof items === 'string') {
+            try { return JSON.parse(items); } catch(e) { return []; }
+        }
+        return [];
+    }
+
     function extractNumber(value) {
         if (value === null || value === undefined) return 0;
         if (typeof value === 'number') return value;
-        const str = String(value).replace(/[^0-9.-]+/g, '');
-        const num = parseFloat(str);
+        const num = parseFloat(String(value).replace(/[^0-9.-]+/g, ''));
         return isNaN(num) ? 0 : num;
     }
 
-    async function fetchOrders() {
+    // جلب قائمة المنتجات من نفس مصدر menu.html
+    async function loadMenuProducts() {
         try {
-            const res = await fetch(`${API_BASE_URL}?action=getOrders&_=${Date.now()}`);
-            const data = await res.json();
-            if (data.success && data.orders) {
-                allOrders = data.orders;
+            const response = await fetch(`${MENU_API_URL}?action=getMenuData&_=${Date.now()}`);
+            const data = await response.json();
+            if (data.success && data.products) {
+                menuProducts = data.products.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    price: parseFloat(p.price) || 0,
+                    categoryId: p.categoryId
+                }));
+                console.log(`تم تحميل ${menuProducts.length} منتج`);
+            } else {
+                console.warn('فشل تحميل المنتجات، سيتم استخدام بيانات تجريبية');
+                menuProducts = [
+                    { id: '1', name: 'نسكافيه', price: 2.5 },
+                    { id: '2', name: 'كابتشينو', price: 3.0 },
+                    { id: '3', name: 'شاي', price: 1.5 }
+                ];
+            }
+        } catch (err) {
+            console.error('خطأ في جلب المنتجات:', err);
+            menuProducts = [];
+        }
+    }
+
+    async function fetchOrders() {
+        const container = document.getElementById('ordersList');
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+        try {
+            const url = `${API_BASE_URL}?action=getOrders&_=${Date.now()}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.success && Array.isArray(data.orders)) {
+                allOrders = data.orders.map(order => ({
+                    ...order,
+                    items: safeParseItems(order.items),
+                    notes: order.notes || '',
+                    tableNumber: order.tableNumber || '?'
+                }));
                 renderOrders();
             } else {
-                throw new Error('فشل تحميل الطلبات');
+                throw new Error(data.error || 'تنسيق بيانات غير صحيح');
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('ordersList').innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> خطأ في تحميل الطلبات، تأكد من الاتصال بالإنترنت.</div>`;
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> خطأ: ${err.message}<br><br><button class="btn-refresh" onclick="fetchOrders()">محاولة مرة أخرى</button></div>`;
         }
     }
 
@@ -348,107 +424,153 @@
             container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i> لا توجد طلبات حالياً</div>`;
             return;
         }
-        container.innerHTML = allOrders.map(order => `
-            <div class="order-edit-card" data-order-id="${order.orderId}">
+
+        container.innerHTML = allOrders.map(order => {
+            const itemsArray = safeParseItems(order.items);
+            return `
+            <div class="order-edit-card" data-order-id="${escapeHtml(order.orderId)}">
                 <div class="card-header">
-                    <span class="order-id">${order.orderId}</span>
+                    <span class="order-id">${escapeHtml(order.orderId)}</span>
                     <span class="order-status"><i class="fas ${order.status === 'preparing' ? 'fa-fire' : (order.status === 'cancelled' ? 'fa-ban' : 'fa-check')}"></i> ${order.status === 'preparing' ? 'قيد التحضير' : (order.status === 'cancelled' ? 'ملغي' : 'مكتمل')}</span>
                 </div>
                 <div class="card-body">
                     <div class="info-row">
-                        <div class="info-item"><div class="info-label">رقم الطاولة</div><div class="info-value"><input type="number" class="table-number-input" value="${order.tableNumber}" style="width:80px; padding:5px; border-radius:20px; border:2px solid var(--clay-brown);"></div></div>
+                        <div class="info-item"><div class="info-label">رقم الطاولة</div><div class="info-value"><input type="number" class="table-number-input" value="${extractNumber(order.tableNumber)}" style="width:80px; padding:5px; border-radius:20px; border:2px solid var(--clay-brown);"></div></div>
                         <div class="info-item"><div class="info-label">الوقت</div><div class="info-value">${new Date(order.timestamp).toLocaleString('ar-EG')}</div></div>
                     </div>
                     
                     <table class="items-table">
                         <thead><tr><th>الصنف</th><th>السعر (د.أ)</th><th>الكمية</th><th>الإجمالي</th><th></th></tr></thead>
                         <tbody id="items-tbody-${order.orderId}">
-                            ${(order.items || []).map((item, idx) => `
+                            ${itemsArray.map((item, idx) => {
+                                const price = extractNumber(item.price);
+                                const quantity = extractNumber(item.quantity);
+                                return `
                                 <tr data-item-index="${idx}">
                                     <td><input type="text" class="item-name-input" value="${escapeHtml(item.name)}" style="width:100%"></td>
-                                    <td><input type="number" step="0.01" class="item-price-input" value="${extractNumber(item.price)}" style="width:80px"></td>
-                                    <td><input type="number" class="item-qty-input" value="${extractNumber(item.quantity)}" style="width:70px"></td>
-                                    <td class="item-total-display">${(extractNumber(item.price) * extractNumber(item.quantity)).toFixed(2)}</td>
+                                    <td><input type="number" step="0.01" class="item-price-input" value="${price}" style="width:80px"></td>
+                                    <td><input type="number" class="item-qty-input" value="${quantity}" style="width:70px"></td>
+                                    <td class="item-total-display">${(price * quantity).toFixed(2)}</td>
                                     <td><button class="btn-remove-item" data-order-id="${order.orderId}" data-item-idx="${idx}"><i class="fas fa-trash-alt"></i></button></td>
-                                </tr>
-                            `).join('')}
+                                
+                            `}).join('')}
                         </tbody>
                     </table>
                     
-                    <div class="add-item-row">
-                        <input type="text" id="new-item-name-${order.orderId}" placeholder="اسم الصنف الجديد">
-                        <input type="number" step="0.01" id="new-item-price-${order.orderId}" placeholder="السعر">
-                        <input type="number" id="new-item-qty-${order.orderId}" placeholder="الكمية" value="1">
-                        <button class="btn-add-item" data-order-id="${order.orderId}"><i class="fas fa-plus"></i> إضافة صنف</button>
+                    <div class="add-item-panel">
+                        <div class="add-item-title"><i class="fas fa-plus-circle"></i> إضافة منتج من القائمة</div>
+                        <div class="product-select-row">
+                            <select id="product-select-${order.orderId}" class="product-search-select">
+                                <option value="">-- اختر منتجاً --</option>
+                                ${menuProducts.map(p => `<option value="${escapeHtml(p.id)}" data-price="${p.price}" data-name="${escapeHtml(p.name)}">${escapeHtml(p.name)} - ${p.price.toFixed(2)} د.أ</option>`).join('')}
+                            </select>
+                            <span class="product-price-preview" id="price-preview-${order.orderId}">0.00 د.أ</span>
+                            <input type="number" id="add-qty-${order.orderId}" placeholder="الكمية" value="1" style="width:80px; padding:8px; border-radius:40px; border:2px solid var(--clay-brown); text-align:center;">
+                            <button class="btn-add-selected" data-order-id="${order.orderId}"><i class="fas fa-cart-plus"></i> إضافة</button>
+                        </div>
                     </div>
                     
                     <div class="order-total" id="total-${order.orderId}">المجموع: ${calculateOrderTotal(order).toFixed(2)} د.أ</div>
                     
-                    <textarea class="notes-area" id="notes-${order.orderId}" rows="2" placeholder="ملاحظات الطلب...">${order.notes || ''}</textarea>
+                    <textarea class="notes-area" id="notes-${order.orderId}" rows="2" placeholder="ملاحظات الطلب...">${escapeHtml(order.notes)}</textarea>
                 </div>
                 <div class="card-actions">
                     <button class="btn-save" data-order-id="${order.orderId}"><i class="fas fa-save"></i> حفظ التعديلات</button>
                     ${order.status !== 'cancelled' ? `<button class="btn-cancel-order" data-order-id="${order.orderId}"><i class="fas fa-ban"></i> إلغاء الطلب بالكامل</button>` : ''}
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
-        // إضافة أحداث لكل الأزرار
-        document.querySelectorAll('.btn-add-item').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const orderId = btn.dataset.orderId;
-                addItemToOrder(orderId);
-            });
+        attachEvents();
+        attachProductSelectEvents();
+    }
+
+    function attachEvents() {
+        document.querySelectorAll('.btn-add-selected').forEach(btn => {
+            btn.addEventListener('click', () => addProductToOrder(btn.dataset.orderId));
         });
         document.querySelectorAll('.btn-remove-item').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const orderId = btn.dataset.orderId;
                 const idx = parseInt(btn.dataset.itemIdx);
                 removeItemFromOrder(orderId, idx);
             });
         });
         document.querySelectorAll('.btn-save').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const orderId = btn.dataset.orderId;
-                await saveOrderChanges(orderId);
-            });
+            btn.addEventListener('click', () => saveOrderChanges(btn.dataset.orderId));
         });
         document.querySelectorAll('.btn-cancel-order').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const orderId = btn.dataset.orderId;
+            btn.addEventListener('click', () => {
                 if (confirm('هل أنت متأكد من إلغاء هذا الطلب بالكامل؟')) {
-                    await cancelOrder(orderId);
+                    cancelOrder(btn.dataset.orderId);
                 }
             });
         });
 
-        // إعادة حساب الإجمالي عند تغيير المدخلات
         for (let order of allOrders) {
             attachRealtimeTotal(order.orderId);
         }
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+    function attachProductSelectEvents() {
+        allOrders.forEach(order => {
+            const select = document.getElementById(`product-select-${order.orderId}`);
+            if (select) {
+                select.addEventListener('change', () => {
+                    const selectedOption = select.options[select.selectedIndex];
+                    const price = selectedOption.getAttribute('data-price') || 0;
+                    document.getElementById(`price-preview-${order.orderId}`).innerText = `${parseFloat(price).toFixed(2)} د.أ`;
+                });
+            }
         });
     }
 
+    function addProductToOrder(orderId) {
+        const select = document.getElementById(`product-select-${orderId}`);
+        const selectedOption = select.options[select.selectedIndex];
+        const productId = select.value;
+        if (!productId) {
+            showNotification('الرجاء اختيار منتج', 'error');
+            return;
+        }
+        const productName = selectedOption.getAttribute('data-name');
+        const productPrice = parseFloat(selectedOption.getAttribute('data-price'));
+        let quantity = parseInt(document.getElementById(`add-qty-${orderId}`).value);
+        if (isNaN(quantity) || quantity < 1) quantity = 1;
+
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (!order) return;
+
+        let items = safeParseItems(order.items);
+        items.push({ name: productName, price: productPrice, quantity: quantity });
+        order.items = items;
+        renderOrders();
+        showNotification(`تمت إضافة "${productName}" إلى الطلب`, 'success');
+    }
+
+    function removeItemFromOrder(orderId, idx) {
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (order) {
+            let items = safeParseItems(order.items);
+            if (items[idx]) {
+                items.splice(idx, 1);
+                order.items = items;
+                renderOrders();
+                showNotification('تم حذف الصنف', 'success');
+            }
+        }
+    }
+
     function calculateOrderTotal(order) {
-        return (order.items || []).reduce((sum, item) => sum + (extractNumber(item.price) * extractNumber(item.quantity)), 0);
+        const items = safeParseItems(order.items);
+        return items.reduce((sum, item) => sum + (extractNumber(item.price) * extractNumber(item.quantity)), 0);
     }
 
     function attachRealtimeTotal(orderId) {
-        const order = allOrders.find(o => o.orderId === orderId);
-        if (!order) return;
         const tbody = document.getElementById(`items-tbody-${orderId}`);
         if (!tbody) return;
         const rows = tbody.querySelectorAll('tr');
-        rows.forEach((row, idx) => {
+        rows.forEach(row => {
             const priceInput = row.querySelector('.item-price-input');
             const qtyInput = row.querySelector('.item-qty-input');
             const totalSpan = row.querySelector('.item-total-display');
@@ -464,8 +586,6 @@
     }
 
     function recalcOrderTotal(orderId) {
-        const order = allOrders.find(o => o.orderId === orderId);
-        if (!order) return;
         let total = 0;
         const tbody = document.getElementById(`items-tbody-${orderId}`);
         if (tbody) {
@@ -480,40 +600,9 @@
         if (totalSpan) totalSpan.innerText = `المجموع: ${total.toFixed(2)} د.أ`;
     }
 
-    function addItemToOrder(orderId) {
-        const nameInput = document.getElementById(`new-item-name-${orderId}`);
-        const priceInput = document.getElementById(`new-item-price-${orderId}`);
-        const qtyInput = document.getElementById(`new-item-qty-${orderId}`);
-        const name = nameInput.value.trim();
-        const price = extractNumber(priceInput.value);
-        let qty = extractNumber(qtyInput.value);
-        if (qty < 1) qty = 1;
-        if (!name) {
-            showNotification('يرجى إدخال اسم الصنف', 'error');
-            return;
-        }
-        const order = allOrders.find(o => o.orderId === orderId);
-        if (!order) return;
-        if (!order.items) order.items = [];
-        order.items.push({ name: name, price: price, quantity: qty });
-        // إعادة عرض الجدول
-        renderOrders(); // تحديث كامل بسيط (يمكن تحسينه)
-        showNotification(`تمت إضافة "${name}" إلى الطلب`, 'success');
-    }
-
-    function removeItemFromOrder(orderId, idx) {
-        const order = allOrders.find(o => o.orderId === orderId);
-        if (order && order.items && order.items[idx]) {
-            order.items.splice(idx, 1);
-            renderOrders();
-            showNotification('تم حذف الصنف', 'success');
-        }
-    }
-
     async function saveOrderChanges(orderId) {
         const order = allOrders.find(o => o.orderId === orderId);
         if (!order) return;
-        // جمع البيانات من الواجهة
         const card = document.querySelector(`.order-edit-card[data-order-id="${orderId}"]`);
         const newTableNumber = parseInt(card.querySelector('.table-number-input').value);
         const newNotes = document.getElementById(`notes-${orderId}`).value;
@@ -532,7 +621,6 @@
             showNotification('لا يمكن حفظ طلب بدون أصناف', 'error');
             return;
         }
-        // تحديث الكائن
         order.tableNumber = newTableNumber;
         order.notes = newNotes;
         order.items = newItems;
@@ -540,7 +628,6 @@
         order.itemsCount = newItems.reduce((s, i) => s + i.quantity, 0);
         order.lastModified = new Date().toISOString();
 
-        // إرسال التعديل إلى الخادم
         try {
             const formData = new URLSearchParams();
             formData.append('action', 'updateOrderItems');
@@ -553,16 +640,15 @@
                 itemsCount: order.itemsCount,
                 lastModified: order.lastModified
             }));
-            const res = await fetch(API_BASE_URL, {
+            await fetch(API_BASE_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData
             });
             showNotification(`تم حفظ التعديلات للطلب ${order.orderId}`, 'success');
-            // إعادة تحميل الطلبات لعرض آخر التغييرات
             await fetchOrders();
         } catch (err) {
+            console.error(err);
             showNotification('خطأ في حفظ التعديلات', 'error');
         }
     }
@@ -576,7 +662,6 @@
             await fetch(API_BASE_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData
             });
             showNotification(`تم إلغاء الطلب ${orderId}`, 'success');
@@ -596,7 +681,11 @@
     }
 
     document.getElementById('refreshOrdersBtn').addEventListener('click', fetchOrders);
-    fetchOrders();
+
+    (async () => {
+        await loadMenuProducts();
+        await fetchOrders();
+    })();
 </script>
 </body>
 </html>
