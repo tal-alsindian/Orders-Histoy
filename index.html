@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📝 تعديل الطلبات • تل السنديان</title>
+    <link rel="icon" href="https://iili.io/qfhk5Pt.png">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* نفس أسلوب تل السنديان */
+        :root {
+            --forest-green: #2D5A27;
+            --olive-green: #4A7B3D;
+            --clay-brown: #8B5A2B;
+            --cream-white: #FFF9F0;
+            --sandy-beige: #F5E6D3;
+            --pure-white: #FFFFFF;
+            --text-dark: #1e3b1a;
+            --shadow-md: 0 15px 30px rgba(0, 30, 0, 0.15);
+            --shadow-lg: 0 25px 50px rgba(0, 20, 0, 0.25);
+            --radius-lg: 30px;
+            --transition-smooth: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            background: radial-gradient(circle at 10% 20%, #386f2e, #1f4a18);
+            color: var(--text-dark);
+            direction: rtl;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: rgba(255, 249, 240, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px solid var(--clay-brown);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-frame {
+            width: 55px;
+            height: 55px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #4CAF50;
+            box-shadow: 0 0 0 5px rgba(76,175,80,0.2);
+        }
+        .logo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .title h1 {
+            color: var(--forest-green);
+            font-size: 1.7rem;
+        }
+        .title p {
+            color: var(--clay-brown);
+            font-size: 0.9rem;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-refresh {
+            background: var(--forest-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
+        }
+        .btn-refresh:hover {
+            transform: scale(1.02);
+            background: #1f441a;
+        }
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .order-edit-card {
+            background: var(--cream-white);
+            border-radius: 28px;
+            border: 2px solid var(--clay-brown);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-smooth);
+        }
+        .order-edit-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        .card-header {
+            background: linear-gradient(145deg, var(--forest-green), #1f441a);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .order-id {
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+        .order-status {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .info-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            background: var(--sandy-beige);
+            padding: 15px;
+            border-radius: 20px;
+        }
+        .info-item {
+            flex: 1;
+        }
+        .info-label {
+            font-weight: 700;
+            color: var(--clay-brown);
+            font-size: 0.8rem;
+        }
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--forest-green);
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .items-table th, .items-table td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        .items-table th {
+            background: var(--forest-green);
+            color: white;
+        }
+        .item-name-input, .item-price-input, .item-qty-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+        .add-item-row {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .add-item-row input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid var(--clay-brown);
+            border-radius: 30px;
+            font-family: inherit;
+        }
+        .btn-add-item {
+            background: var(--forest-green);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-remove-item {
+            background: #c33;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .order-total {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--forest-green);
+            text-align: left;
+            margin: 15px 0;
+        }
+        .notes-area {
+            width: 100%;
+            padding: 10px;
+            border-radius: 20px;
+            border: 2px solid var(--clay-brown);
+            font-family: inherit;
+            margin: 10px 0;
+        }
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            padding: 15px 20px;
+            background: var(--sandy-beige);
+            border-top: 2px solid var(--clay-brown);
+            flex-wrap: wrap;
+        }
+        .btn-save, .btn-cancel-order {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
+        }
+        .btn-save {
+            background: var(--forest-green);
+            color: white;
+        }
+        .btn-cancel-order {
+            background: #c33;
+            color: white;
+        }
+        .btn-save:hover, .btn-cancel-order:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: var(--cream-white);
+            border-radius: 30px;
+            color: var(--clay-brown);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--forest-green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            z-index: 9999;
+            box-shadow: var(--shadow-lg);
+            font-weight: bold;
+            animation: slideDown 0.3s;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -100%); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @media (max-width: 700px) {
+            .items-table th, .items-table td { font-size: 0.8rem; }
+            .info-value { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <div class="logo-frame"><img src="https://iili.io/qfhk5Pt.png" alt="شعار"></div>
+            <div class="title">
+                <h1>📝 تعديل وإدارة الطلبات</h1>
+                <p>تل السنديان • نظام التحكم الكامل</p>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="btn-refresh" id="refreshOrdersBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
+        </div>
+    </div>
+    <div id="ordersList" class="orders-list">
+        <div class="empty-state">جاري تحميل الطلبات...</div>
+    </div>
+</div>
+
+<script>
+    // ======================== الإعدادات ========================
+    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbxJl3whSGQYuInbpu8CP9iLyCRyYEMN17IMuJut7uEuhsy37EZw5ngJKbKpgBYnsKm48g/exec'; // استبدل بالرابط الجديد
+
+    let allOrders = [];
+
+    // دوال مساعدة
+    function extractNumber(value) {
+        if (value === null || value === undefined) return 0;
+        if (typeof value === 'number') return value;
+        const str = String(value).replace(/[^0-9.-]+/g, '');
+        const num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
+    }
+
+    async function fetchOrders() {
+        try {
+            const res = await fetch(`${API_BASE_URL}?action=getOrders&_=${Date.now()}`);
+            const data = await res.json();
+            if (data.success && data.orders) {
+                allOrders = data.orders;
+                renderOrders();
+            } else {
+                throw new Error('فشل تحميل الطلبات');
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('ordersList').innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i> خطأ في تحميل الطلبات، تأكد من الاتصال بالإنترنت.</div>`;
+        }
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('ordersList');
+        if (!allOrders.length) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i> لا توجد طلبات حالياً</div>`;
+            return;
+        }
+        container.innerHTML = allOrders.map(order => `
+            <div class="order-edit-card" data-order-id="${order.orderId}">
+                <div class="card-header">
+                    <span class="order-id">${order.orderId}</span>
+                    <span class="order-status"><i class="fas ${order.status === 'preparing' ? 'fa-fire' : (order.status === 'cancelled' ? 'fa-ban' : 'fa-check')}"></i> ${order.status === 'preparing' ? 'قيد التحضير' : (order.status === 'cancelled' ? 'ملغي' : 'مكتمل')}</span>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-item"><div class="info-label">رقم الطاولة</div><div class="info-value"><input type="number" class="table-number-input" value="${order.tableNumber}" style="width:80px; padding:5px; border-radius:20px; border:2px solid var(--clay-brown);"></div></div>
+                        <div class="info-item"><div class="info-label">الوقت</div><div class="info-value">${new Date(order.timestamp).toLocaleString('ar-EG')}</div></div>
+                    </div>
+                    
+                    <table class="items-table">
+                        <thead><tr><th>الصنف</th><th>السعر (د.أ)</th><th>الكمية</th><th>الإجمالي</th><th></th></tr></thead>
+                        <tbody id="items-tbody-${order.orderId}">
+                            ${(order.items || []).map((item, idx) => `
+                                <tr data-item-index="${idx}">
+                                    <td><input type="text" class="item-name-input" value="${escapeHtml(item.name)}" style="width:100%"></td>
+                                    <td><input type="number" step="0.01" class="item-price-input" value="${extractNumber(item.price)}" style="width:80px"></td>
+                                    <td><input type="number" class="item-qty-input" value="${extractNumber(item.quantity)}" style="width:70px"></td>
+                                    <td class="item-total-display">${(extractNumber(item.price) * extractNumber(item.quantity)).toFixed(2)}</td>
+                                    <td><button class="btn-remove-item" data-order-id="${order.orderId}" data-item-idx="${idx}"><i class="fas fa-trash-alt"></i></button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="add-item-row">
+                        <input type="text" id="new-item-name-${order.orderId}" placeholder="اسم الصنف الجديد">
+                        <input type="number" step="0.01" id="new-item-price-${order.orderId}" placeholder="السعر">
+                        <input type="number" id="new-item-qty-${order.orderId}" placeholder="الكمية" value="1">
+                        <button class="btn-add-item" data-order-id="${order.orderId}"><i class="fas fa-plus"></i> إضافة صنف</button>
+                    </div>
+                    
+                    <div class="order-total" id="total-${order.orderId}">المجموع: ${calculateOrderTotal(order).toFixed(2)} د.أ</div>
+                    
+                    <textarea class="notes-area" id="notes-${order.orderId}" rows="2" placeholder="ملاحظات الطلب...">${order.notes || ''}</textarea>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-save" data-order-id="${order.orderId}"><i class="fas fa-save"></i> حفظ التعديلات</button>
+                    ${order.status !== 'cancelled' ? `<button class="btn-cancel-order" data-order-id="${order.orderId}"><i class="fas fa-ban"></i> إلغاء الطلب بالكامل</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        // إضافة أحداث لكل الأزرار
+        document.querySelectorAll('.btn-add-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = btn.dataset.orderId;
+                addItemToOrder(orderId);
+            });
+        });
+        document.querySelectorAll('.btn-remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = btn.dataset.orderId;
+                const idx = parseInt(btn.dataset.itemIdx);
+                removeItemFromOrder(orderId, idx);
+            });
+        });
+        document.querySelectorAll('.btn-save').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const orderId = btn.dataset.orderId;
+                await saveOrderChanges(orderId);
+            });
+        });
+        document.querySelectorAll('.btn-cancel-order').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const orderId = btn.dataset.orderId;
+                if (confirm('هل أنت متأكد من إلغاء هذا الطلب بالكامل؟')) {
+                    await cancelOrder(orderId);
+                }
+            });
+        });
+
+        // إعادة حساب الإجمالي عند تغيير المدخلات
+        for (let order of allOrders) {
+            attachRealtimeTotal(order.orderId);
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function calculateOrderTotal(order) {
+        return (order.items || []).reduce((sum, item) => sum + (extractNumber(item.price) * extractNumber(item.quantity)), 0);
+    }
+
+    function attachRealtimeTotal(orderId) {
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (!order) return;
+        const tbody = document.getElementById(`items-tbody-${orderId}`);
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach((row, idx) => {
+            const priceInput = row.querySelector('.item-price-input');
+            const qtyInput = row.querySelector('.item-qty-input');
+            const totalSpan = row.querySelector('.item-total-display');
+            const update = () => {
+                const price = extractNumber(priceInput.value);
+                const qty = extractNumber(qtyInput.value);
+                totalSpan.innerText = (price * qty).toFixed(2);
+                recalcOrderTotal(orderId);
+            };
+            priceInput.addEventListener('input', update);
+            qtyInput.addEventListener('input', update);
+        });
+    }
+
+    function recalcOrderTotal(orderId) {
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (!order) return;
+        let total = 0;
+        const tbody = document.getElementById(`items-tbody-${orderId}`);
+        if (tbody) {
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const price = extractNumber(row.querySelector('.item-price-input')?.value);
+                const qty = extractNumber(row.querySelector('.item-qty-input')?.value);
+                total += price * qty;
+            });
+        }
+        const totalSpan = document.getElementById(`total-${orderId}`);
+        if (totalSpan) totalSpan.innerText = `المجموع: ${total.toFixed(2)} د.أ`;
+    }
+
+    function addItemToOrder(orderId) {
+        const nameInput = document.getElementById(`new-item-name-${orderId}`);
+        const priceInput = document.getElementById(`new-item-price-${orderId}`);
+        const qtyInput = document.getElementById(`new-item-qty-${orderId}`);
+        const name = nameInput.value.trim();
+        const price = extractNumber(priceInput.value);
+        let qty = extractNumber(qtyInput.value);
+        if (qty < 1) qty = 1;
+        if (!name) {
+            showNotification('يرجى إدخال اسم الصنف', 'error');
+            return;
+        }
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (!order) return;
+        if (!order.items) order.items = [];
+        order.items.push({ name: name, price: price, quantity: qty });
+        // إعادة عرض الجدول
+        renderOrders(); // تحديث كامل بسيط (يمكن تحسينه)
+        showNotification(`تمت إضافة "${name}" إلى الطلب`, 'success');
+    }
+
+    function removeItemFromOrder(orderId, idx) {
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (order && order.items && order.items[idx]) {
+            order.items.splice(idx, 1);
+            renderOrders();
+            showNotification('تم حذف الصنف', 'success');
+        }
+    }
+
+    async function saveOrderChanges(orderId) {
+        const order = allOrders.find(o => o.orderId === orderId);
+        if (!order) return;
+        // جمع البيانات من الواجهة
+        const card = document.querySelector(`.order-edit-card[data-order-id="${orderId}"]`);
+        const newTableNumber = parseInt(card.querySelector('.table-number-input').value);
+        const newNotes = document.getElementById(`notes-${orderId}`).value;
+        const tbody = document.getElementById(`items-tbody-${orderId}`);
+        const rows = tbody.querySelectorAll('tr');
+        const newItems = [];
+        for (let row of rows) {
+            const name = row.querySelector('.item-name-input').value.trim();
+            const price = extractNumber(row.querySelector('.item-price-input').value);
+            const quantity = extractNumber(row.querySelector('.item-qty-input').value);
+            if (name && quantity > 0) {
+                newItems.push({ name, price, quantity });
+            }
+        }
+        if (newItems.length === 0) {
+            showNotification('لا يمكن حفظ طلب بدون أصناف', 'error');
+            return;
+        }
+        // تحديث الكائن
+        order.tableNumber = newTableNumber;
+        order.notes = newNotes;
+        order.items = newItems;
+        order.total = calculateOrderTotal(order).toFixed(2);
+        order.itemsCount = newItems.reduce((s, i) => s + i.quantity, 0);
+        order.lastModified = new Date().toISOString();
+
+        // إرسال التعديل إلى الخادم
+        try {
+            const formData = new URLSearchParams();
+            formData.append('action', 'updateOrderItems');
+            formData.append('orderId', order.orderId);
+            formData.append('data', JSON.stringify({
+                tableNumber: order.tableNumber,
+                notes: order.notes,
+                items: order.items,
+                total: order.total,
+                itemsCount: order.itemsCount,
+                lastModified: order.lastModified
+            }));
+            const res = await fetch(API_BASE_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            showNotification(`تم حفظ التعديلات للطلب ${order.orderId}`, 'success');
+            // إعادة تحميل الطلبات لعرض آخر التغييرات
+            await fetchOrders();
+        } catch (err) {
+            showNotification('خطأ في حفظ التعديلات', 'error');
+        }
+    }
+
+    async function cancelOrder(orderId) {
+        try {
+            const formData = new URLSearchParams();
+            formData.append('action', 'cancelOrder');
+            formData.append('orderId', orderId);
+            formData.append('reason', 'تم الإلغاء من لوحة التعديل');
+            await fetch(API_BASE_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            showNotification(`تم إلغاء الطلب ${orderId}`, 'success');
+            await fetchOrders();
+        } catch (err) {
+            showNotification('فشل إلغاء الطلب', 'error');
+        }
+    }
+
+    function showNotification(msg, type = 'info') {
+        const notif = document.createElement('div');
+        notif.className = 'notification';
+        notif.style.background = type === 'error' ? '#c33' : '#2D5A27';
+        notif.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 3000);
+    }
+
+    document.getElementById('refreshOrdersBtn').addEventListener('click', fetchOrders);
+    fetchOrders();
+</script>
+</body>
+</html>
